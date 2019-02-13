@@ -37,18 +37,46 @@ class FlutterTransformer extends Transformer {
     // Handle timeout
     Stream<List<int>> stream = response.stream;
     if (options.receiveTimeout > 0) {
-      stream = stream.timeout(
-          new Duration(milliseconds: options.receiveTimeout),
+      stream = stream
+          .timeout(new Duration(milliseconds: options.receiveTimeout),
           onTimeout: (EventSink sink) {
             sink.addError(new DioError(
-              message: "Receiving data timeout[${options
-                  .receiveTimeout}ms]",
+              message: "Receiving data timeout[${options.receiveTimeout}ms]",
               type: DioErrorType.RECEIVE_TIMEOUT,
             ));
             sink.close();
           });
     }
-    String responseBody = await stream.transform(Utf8Decoder(allowMalformed: true)).join();
+    int length = 0;
+    int received = 0;
+    bool showDownloadProgress = options.onReceiveProgress != null;
+    if (showDownloadProgress) {
+      length = int.parse(
+          response.headers.value(HttpHeaders.contentLengthHeader) ?? "-1");
+    }
+    Completer completer = new Completer();
+    Stream _stream = stream.transform<List<int>>(
+        StreamTransformer.fromHandlers(handleData: (data, sink) {
+          sink.add(data);
+          if (showDownloadProgress) {
+            received += data.length;
+            options.onReceiveProgress(received, length);
+          }
+        }));
+    List<int> buffer = new List<int>();
+    StreamSubscription subscription;
+    subscription = _stream.listen(
+          (element) => buffer.addAll(element),
+      onError: (e) => completer.completeError(e),
+      onDone: () => completer.complete(),
+      cancelOnError: true,
+    );
+    options.cancelToken?.cancelled?.then((_){
+      subscription.cancel();
+    });
+    await completer.future;
+    if (options.responseType == ResponseType.bytes) return buffer;
+    String responseBody = utf8.decode(buffer, allowMalformed: true);
     if (responseBody != null
         && responseBody.isNotEmpty
         && options.responseType == ResponseType.json
