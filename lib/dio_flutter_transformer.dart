@@ -15,7 +15,6 @@ import 'package:flutter/foundation.dart';
 /// will be in background with [compute] function.
 
 class FlutterTransformer extends Transformer {
-
   Future<String> transformRequest(RequestOptions options) async {
     var data = options.data ?? "";
     if (data is! String) {
@@ -30,7 +29,10 @@ class FlutterTransformer extends Transformer {
 
   /// As an agreement, you must return the [response]
   /// when the Options.responseType is [ResponseType.stream].
-  Future transformResponse(RequestOptions options, ResponseBody response) async {
+  Future transformResponse(
+    RequestOptions options,
+    ResponseBody response,
+  ) async {
     if (options.responseType == ResponseType.stream) {
       return response;
     }
@@ -39,13 +41,13 @@ class FlutterTransformer extends Transformer {
     if (options.receiveTimeout > 0) {
       stream = stream
           .timeout(new Duration(milliseconds: options.receiveTimeout),
-          onTimeout: (EventSink sink) {
-            sink.addError(new DioError(
-              message: "Receiving data timeout[${options.receiveTimeout}ms]",
-              type: DioErrorType.RECEIVE_TIMEOUT,
-            ));
-            sink.close();
-          });
+              onTimeout: (EventSink sink) {
+        sink.addError(new DioError(
+          message: "Receiving data timeout[${options.receiveTimeout}ms]",
+          type: DioErrorType.RECEIVE_TIMEOUT,
+        ));
+        sink.close();
+      });
     }
     int length = 0;
     int received = 0;
@@ -57,32 +59,32 @@ class FlutterTransformer extends Transformer {
     Completer completer = new Completer();
     Stream _stream = stream.transform<List<int>>(
         StreamTransformer.fromHandlers(handleData: (data, sink) {
-          sink.add(data);
-          if (showDownloadProgress) {
-            received += data.length;
-            options.onReceiveProgress(received, length);
-          }
-        }));
+      sink.add(data);
+      if (showDownloadProgress) {
+        received += data.length;
+        options.onReceiveProgress(received, length);
+      }
+    }));
     List<int> buffer = new List<int>();
     StreamSubscription subscription;
     subscription = _stream.listen(
-          (element) => buffer.addAll(element),
+      (element) => buffer.addAll(element),
       onError: (e) => completer.completeError(e),
       onDone: () => completer.complete(),
       cancelOnError: true,
     );
-    options.cancelToken?.cancelled?.then((_){
-      subscription.cancel();
+    options.cancelToken?.cancelled?.then((_) {
+      return subscription.cancel();
     });
     await completer.future;
     if (options.responseType == ResponseType.bytes) return buffer;
     String responseBody = utf8.decode(buffer, allowMalformed: true);
-    if (responseBody != null
-        && responseBody.isNotEmpty
-        && options.responseType == ResponseType.json
-        && response.headers.contentType?.mimeType == ContentType.json.mimeType) {
+    if (responseBody != null &&
+        responseBody.isNotEmpty &&
+        options.responseType == ResponseType.json &&
+        response.headers.contentType?.mimeType == ContentType.json.mimeType) {
       // Use Compute
-      return compute(_parseAndDecode,responseBody);
+      return compute(_parseAndDecode, responseBody);
     }
     return responseBody;
   }
