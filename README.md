@@ -6,7 +6,7 @@ A [dio](https://github.com/flutterchina/dio) transformer especially for flutter,
 
 ```yaml
 dependencies:
-  dio_flutter_transformer: ^2.0.2
+  dio_flutter_transformer: ^2.0.3
 ```
 
 ## Usage
