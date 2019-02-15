@@ -3,6 +3,7 @@ library dio_flutter_transformer;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -73,7 +74,7 @@ class FlutterTransformer extends Transformer {
       onDone: () => completer.complete(),
       cancelOnError: true,
     );
-    options.cancelToken?.cancelled?.then((_) {
+    options.cancelToken?.whenCancel?.then((_) {
       return subscription.cancel();
     });
     await completer.future;
