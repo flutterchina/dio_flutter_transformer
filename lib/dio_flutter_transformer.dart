@@ -73,7 +73,7 @@ class FlutterTransformer extends Transformer {
       onDone: () => completer.complete(),
       cancelOnError: true,
     );
-    options.cancelToken?.cancelled?.then((_) {
+    options.cancelToken?.whenCancel?.then((_) {
       return subscription.cancel();
     });
     await completer.future;
