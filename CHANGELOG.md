@@ -1,3 +1,3 @@
-## [0.0.1] - TODO: Add release date.
+## [3.0.0] - 2019.9.19
 
-* TODO: Describe initial release.
+* A dio transformer especially for flutter, by which the json decoding will be in background with [compute] function.
