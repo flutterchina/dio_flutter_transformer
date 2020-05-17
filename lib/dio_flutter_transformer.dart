@@ -1,6 +1,7 @@
 library dio_flutter_transformer;
 
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -12,9 +13,24 @@ import 'package:flutter/foundation.dart';
 /// [FlutterTransformer] is especially for flutter, by which the json decoding
 /// will be in background with [compute] function.
 
-/// FlutterTransformer
+/// FlutterTransformer for Dio.
+///
+/// If the text to decode is under [minLength], it will not use [compute].
+/// This can be an optimization since [compute] has a static performance
+/// overhead, which can be avoided for small pieces of JSON.
+///
+/// By default, it will not use [compute] on web as it is not currently
+/// supported. This can be overriden using [disableOnWeb].
 class FlutterTransformer extends DefaultTransformer {
-  FlutterTransformer() : super(jsonDecodeCallback: _parseJson);
+  FlutterTransformer({
+    int minLength = 0,
+    bool disableOnWeb = true,
+  }) : super(
+          jsonDecodeCallback: _getJsonParser(
+            minLength: minLength,
+            disableOnWeb: disableOnWeb,
+          ),
+        );
 }
 
 // Must be top-level function
@@ -22,6 +38,15 @@ _parseAndDecode(String response) {
   return jsonDecode(response);
 }
 
-_parseJson(String text) {
-  return compute(_parseAndDecode, text);
+Function _getJsonParser({
+  int minLength,
+  bool disableOnWeb,
+}) {
+  return (String text) {
+    if (text.isEmpty || text.length < minLength || (kIsWeb && disableOnWeb)) {
+      return _parseAndDecode(text);
+    }
+
+    return compute(_parseAndDecode, text);
+  };
 }
