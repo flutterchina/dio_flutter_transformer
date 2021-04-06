@@ -9,7 +9,7 @@ A [dio](https://github.com/flutterchina/dio) transformer especially for flutter,
 
 ```yaml
 dependencies:
-  dio_flutter_transformer: ^3.0.2 # latest version
+  dio_flutter_transformer: ^4.0.0 # latest version
 ```
 
 ## Usage
